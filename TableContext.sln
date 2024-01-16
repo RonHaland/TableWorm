@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34309.116
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TableContext", "TableContext.csproj", "{DC7ACC75-4286-4482-8BE1-50FD8AAB3DBC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TableContext", "TableContext\TableContext.csproj", "{DC7ACC75-4286-4482-8BE1-50FD8AAB3DBC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TableContext.Tests", "..\TableContext.Tests\TableContext.Tests.csproj", "{D76424A0-E73C-45C3-91F9-299D372F185C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TableContext.Tests", "TableContext.Tests\TableContext.Tests.csproj", "{D76424A0-E73C-45C3-91F9-299D372F185C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
