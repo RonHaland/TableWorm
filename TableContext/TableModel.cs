@@ -1,5 +1,6 @@
 ﻿using Azure.Data.Tables;
 using AzureTableContext.Attributes;
+using Microsoft.VisualBasic;
 using System.Collections;
 using System.Reflection;
 
@@ -8,9 +9,11 @@ namespace AzureTableContext;
 public abstract class TableModel
 {
     [TableIgnore]
-    public string Id { get; set; } = null!;
+    public string Id { get; set; } = Guid.NewGuid().ToString();
     [TableIgnore]
     public string PartitionKey { get; set; } = null!;
+    [TableIgnore]
+    public DateTimeOffset? ModifiedDate { get; set; } = DateTimeOffset.UtcNow;
 
     internal readonly Dictionary<string, string> _foreignKeys = new();
 
@@ -25,6 +28,7 @@ public abstract class TableModel
     internal TableEntity ConvertToTableEntity()
     {
         var entity = new TableEntity(PartitionKey, Id);
+        entity.Timestamp = ModifiedDate;
         var valueProps = DirectTablePropertiesMap.TryGetValue(true, out var directProps) ? directProps : [];
 
         foreach (var prop in valueProps)

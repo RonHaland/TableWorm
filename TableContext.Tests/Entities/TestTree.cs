@@ -1,18 +1,8 @@
-﻿using AzureTableContext;
-using Ronhaland.TableContext.Attributes;
+﻿using AzureTableContext.Attributes;
 
 namespace AzureTableContext.Tests.Entities;
 
-
-public abstract class CustomTableModel : TableModel
-{
-    public CustomTableModel()
-    {
-        Id = Guid.NewGuid().ToString();
-        PartitionKey = "";
-    }
-}
-
+[TableName("Roots")]
 public class Root : TableModel
 {
     [TableForeignKey("MyCustomBaseId")]
@@ -24,31 +14,29 @@ public class Root : TableModel
     public List<Branch> Branches { get; set; } = [];
 }
 
-public class Base : CustomTableModel
+[TableName("TreeBases")]
+public class Base : TableModel
 {
     [TableComboKey]
     public List<Branch> Branches { get; set; } = [];
     [TableParent]
     public Root? Root { get; set; }
+    [TableIgnore]
+    public bool IsComplete => Root != null;
 }
 
-public class Trunk : CustomTableModel
-{
-    public List<Branch> Branches { get; set; } = [];
-    [TableParent]
-    public Base? Base { get; set; }
-}
-
-public class Branch : CustomTableModel
+[TableName("Branches")]
+public class Branch : TableModel
 {
     public List<Leaf> Leafs { get; set; } = [];
     [TableParent]
     public Root? Root { get; set; }
     [TableParent]
-    public Trunk? Trunk { get; set; }
+    public Base? Base { get; set; }
 }
 
-public class Leaf : CustomTableModel
+[TableName("Leaves")]
+public class Leaf : TableModel
 {
     [TableParent]
     public Branch? Branch { get; set; }

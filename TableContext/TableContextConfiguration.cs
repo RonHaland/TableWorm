@@ -1,5 +1,7 @@
 ﻿using Azure.Core;
 using Azure.Data.Tables;
+using AzureTableContext.Attributes;
+using System.Reflection;
 
 namespace AzureTableContext;
 
@@ -14,7 +16,8 @@ public partial class TableContext
 
     public TableContext RegisterTable<TTableModel>() where TTableModel : TableModel
     {
-        var tableName = typeof(TTableModel).Name;
+        var nameAttribute = typeof(TTableModel).GetCustomAttribute<TableNameAttribute>();
+        var tableName = nameAttribute != null ? nameAttribute.Name : typeof(TTableModel).Name;
         var client = CreateClient(tableName);
         client.CreateIfNotExists();
         if (_tableClients.TryAdd(typeof(TTableModel), client))

@@ -47,7 +47,6 @@ public class UnitTest1
             .ConfigureLocal()
             .RegisterTable<Root>()
             .RegisterTable<Base>()
-            .RegisterTable<Trunk>()
             .RegisterTable<Branch>()
             .RegisterTable<Leaf>();
 
@@ -62,7 +61,6 @@ public class UnitTest1
             .ConfigureLocal()
             .RegisterTable<Root>()
             .RegisterTable<Base>()
-            .RegisterTable<Trunk>()
             .RegisterTable<Branch>()
             .RegisterTable<Leaf>();
 
@@ -84,30 +82,24 @@ public class UnitTest1
             {
                 Id = "Base",
                 PartitionKey = "TreeBase",
-                Trunk = new()
-                {
-                    Id = "Trunk",
-                    PartitionKey = "TreeTrunk",
-                    Branches = [
+                Branches = [
                         new Branch() { Id = "thirdBranch", PartitionKey = "Trunk" },
-                        new Branch()
-                        {
-                            Id = "fourthBranch",
-                            PartitionKey = "Trunk",
-                            Leafs = [
+                    new Branch()
+                    {
+                        Id = "fourthBranch",
+                        PartitionKey = "Trunk",
+                        Leafs = [
                             new Leaf() { Id = "firstLeaf", PartitionKey = "fourthBranch" },
-                                new Leaf() { Id = "secondLeaf", PartitionKey = "fourthBranch" }
+                            new Leaf() { Id = "secondLeaf", PartitionKey = "fourthBranch" }
                             ]
-                        },
-                    ]
-                }
+                    },
+                ]
             }
         };
 
         var tableContext = new TableContext();
         tableContext.RegisterTable<Root>()
             .RegisterTable<Base>()
-            .RegisterTable<Trunk>()
             .RegisterTable<Branch>()
             .RegisterTable<Leaf>();
         await tableContext.Save(tree, tree, tree);
@@ -128,21 +120,17 @@ public class UnitTest1
             Base = new()
             {
                 PartitionKey = "test",
-                Trunk = new()
-                {
-                    PartitionKey = "test",
-                    Branches = [
+                Branches = [
                         new Branch() { PartitionKey = "test" },
-                        new Branch()
-                        {
-                            PartitionKey = "test",
-                            Leafs = [
+                    new Branch()
+                    {
+                        PartitionKey = "test",
+                        Leafs = [
                                 new Leaf() { PartitionKey = "test" },
-                                new Leaf() { PartitionKey = "test" }
+                            new Leaf() { PartitionKey = "test" }
                             ]
-                        },
-                    ]
-                }
+                    },
+                ]
             }
         };
 
@@ -151,7 +139,6 @@ public class UnitTest1
             .ConfigureLocal()
             .RegisterTable<Root>()
             .RegisterTable<Base>()
-            .RegisterTable<Trunk>()
             .RegisterTable<Branch>()
             .RegisterTable<Leaf>();
 
@@ -159,7 +146,7 @@ public class UnitTest1
 
         var loadedTree = await tableContext.QueryAsync<Root>("RowKey eq 'forDelete'", 5);
 
-        await tableContext.Delete(loadedTree ?? []);
+        await tableContext.Delete(loadedTree ?? [], 5);
 
         var emptyTree = await tableContext.QueryAsync<Root>("RowKey eq 'forDelete'", 5);
 

@@ -1,5 +1,5 @@
-﻿using AzureTableContext;
-using TableContext.Attributes;
+﻿using AzureTableContext.Attributes;
+
 
 namespace AzureTableContext.Tests.Entities;
 

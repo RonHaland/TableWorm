@@ -15,11 +15,13 @@ tableContext
 ```
 
 Models must inherit from the `TableModel` class.
-The `TableForeignKey` Attribute is used to genererate a foreignkey field when saving and reading the table.
-The `TableComboKey` Attribute makes the child-object's partitionkey a combination of this objects partitionKey and Id (RowKey).
-The `TableIgnore` Attribute is used to ignore a property when saving and reading from the table.
-The `TableParent` Attribute tries to set the property to the parent of this object.
-The `TableJson` Attribute is used to serialize/deserialize the value as json when reading and writing to the table.
+
+- The `TableForeignKey` Attribute is used to genererate a foreignkey field when saving and reading the table.
+- The `TableComboKey` Attribute makes the child-object's partitionkey a combination of this objects partitionKey and Id (RowKey).
+- The `TableIgnore` Attribute is used to ignore a property when saving and reading from the table.
+- The `TableParent` Attribute tries to set the property to the parent of this object.
+- The `TableJson` Attribute is used to serialize/deserialize the value as json when reading and writing to the table.
+
 Example:
 ``` C#
 public class Root : TableModel

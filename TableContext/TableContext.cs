@@ -133,6 +133,7 @@ public partial class TableContext
             var model = Activator.CreateInstance<TTableModel>();
             model.Id = e.RowKey;
             model.PartitionKey = e.PartitionKey;
+            model.ModifiedDate = e.Timestamp;
 
             var valueProps = model.DirectTablePropertiesMap.TryGetValue(true, out var directProps) ? directProps : [];
 
@@ -169,6 +170,7 @@ public partial class TableContext
             var model = Activator.CreateInstance<TTableModel>();
             model.Id = e.RowKey;
             model.PartitionKey = e.PartitionKey;
+            model.ModifiedDate = e.Timestamp;
 
             var valueProps = model.DirectTablePropertiesMap.TryGetValue(true, out var directProps) ? directProps : [];
 

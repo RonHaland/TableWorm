@@ -6,7 +6,7 @@
 		<Nullable>enable</Nullable>
 
 		<PackageId>Ronhaland.TableContext</PackageId>
-		<Version>0.1.1</Version>
+		<Version>0.1.2-alpha1</Version>
 		<Authors>RonHaland</Authors>
 		<PackageReadmeFile>readme.md</PackageReadmeFile>
 		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
@@ -18,8 +18,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Include="Docs\readme.md" Pack="true" PackagePath="\"/>
-		<None Include="..\LICENSE.txt" Pack="true" PackagePath="\"/>
+		<None Include="Docs\readme.md" Pack="true" PackagePath="\" />
+		<None Include="..\LICENSE.txt" Pack="true" PackagePath="\" />
 	</ItemGroup>
 
 </Project>
