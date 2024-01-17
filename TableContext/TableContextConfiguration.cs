@@ -1,9 +1,9 @@
 ﻿using Azure.Core;
 using Azure.Data.Tables;
 
-namespace TableContext;
+namespace AzureTableContext;
 
-public abstract partial class TableContext
+public partial class TableContext
 {
     private readonly Dictionary<Type, TableClient> _tableClients = new();
     private string? _connectionString = null;

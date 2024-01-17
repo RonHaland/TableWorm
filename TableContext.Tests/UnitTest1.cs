@@ -1,13 +1,13 @@
-using TableContext.Tests.Entities;
+using AzureTableContext.Tests.Entities;
 
-namespace TableContext.Tests;
+namespace AzureTableContext.Tests;
 
 public class UnitTest1
 {
     [Fact]
     public async Task FoozTest()
     {
-        var localTableContext = new TestTableContext();
+        var localTableContext = new TableContext();
         localTableContext
             .ConfigureLocal()
             .RegisterTable<Teams>()
@@ -18,13 +18,13 @@ public class UnitTest1
             .RegisterTable<Users>();
 
         var tournaments = localTableContext.Query<Tournaments>("RowKey eq '145767d9-f608-4679-90c1-7b6d7be9b60d'");
-        var tournament = tournaments?.FirstOrDefault();
+        var tournament = tournaments?.FirstOrDefault()!;
         tournament.Id = Guid.NewGuid().ToString();
         tournament.Name = "Custom Tournament with new Library";
 
         var users = localTableContext.Query<Users>("");
 
-        var foozAppTableContext = new TestTableContext()
+        var foozAppTableContext = new TableContext()
             .ConfigureConnectionString("")
             .RegisterTable<Teams>()
             .RegisterTable<Participants>()
@@ -42,7 +42,7 @@ public class UnitTest1
     [Fact]
     public void TestQuery()
     {
-        var testTableContext = new TestTableContext();
+        var testTableContext = new TableContext();
         testTableContext
             .ConfigureLocal()
             .RegisterTable<Root>()
@@ -57,7 +57,7 @@ public class UnitTest1
     [Fact]
     public async Task TestQueryAsync()
     {
-        var testTableContext = new TestTableContext();
+        var testTableContext = new TableContext();
         testTableContext
             .ConfigureLocal()
             .RegisterTable<Root>()
@@ -77,10 +77,10 @@ public class UnitTest1
             Id = "myTree",
             PartitionKey = "tree",
             Branches = [
-                new Branch() { Id = "firstBranch", PartitionKey = "myTree"},
+                new Branch() { Id = "firstBranch", PartitionKey = "myTree" },
                 new Branch() { Id = "secondBranch", PartitionKey = "myTree" },
             ],
-            Base = new() 
+            Base = new()
             {
                 Id = "Base",
                 PartitionKey = "TreeBase",
@@ -90,9 +90,13 @@ public class UnitTest1
                     PartitionKey = "TreeTrunk",
                     Branches = [
                         new Branch() { Id = "thirdBranch", PartitionKey = "Trunk" },
-                        new Branch() { Id = "fourthBranch", PartitionKey = "Trunk", Leafs = [
-                            new Leaf() { Id = "firstLeaf", PartitionKey = "fourthBranch"},
-                            new Leaf() { Id = "secondLeaf", PartitionKey = "fourthBranch" }
+                        new Branch()
+                        {
+                            Id = "fourthBranch",
+                            PartitionKey = "Trunk",
+                            Leafs = [
+                            new Leaf() { Id = "firstLeaf", PartitionKey = "fourthBranch" },
+                                new Leaf() { Id = "secondLeaf", PartitionKey = "fourthBranch" }
                             ]
                         },
                     ]
@@ -100,7 +104,7 @@ public class UnitTest1
             }
         };
 
-        var tableContext = new TestTableContext();
+        var tableContext = new TableContext();
         tableContext.RegisterTable<Root>()
             .RegisterTable<Base>()
             .RegisterTable<Trunk>()
@@ -142,7 +146,7 @@ public class UnitTest1
             }
         };
 
-        var tableContext = new TestTableContext();
+        var tableContext = new TableContext();
         tableContext
             .ConfigureLocal()
             .RegisterTable<Root>()
@@ -155,7 +159,7 @@ public class UnitTest1
 
         var loadedTree = await tableContext.QueryAsync<Root>("RowKey eq 'forDelete'", 5);
 
-        await tableContext.Delete(loadedTree ?? [], 0);
+        await tableContext.Delete(loadedTree ?? []);
 
         var emptyTree = await tableContext.QueryAsync<Root>("RowKey eq 'forDelete'", 5);
 
@@ -181,9 +185,8 @@ public class UnitTest1
             }
         }
 
-
         var options = Enumerable.Range(4, 25).Select(n => new { n, Options = getOptions(n) }).ToDictionary(k => k.n, v => v.Options);
     }
 
-    private List<int> getOptions(int count, int max = 100) => Enumerable.Range(4, max).Where(n => (count * n) % 4 == 0).Select(n => n*count/4).ToList();
+    private List<int> getOptions(int count, int max = 100) => Enumerable.Range(4, max).Where(n => count * n % 4 == 0).Select(n => n * count / 4).ToList();
 }

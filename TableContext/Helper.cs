@@ -1,4 +1,4 @@
-﻿namespace TableContext;
+﻿namespace AzureTableContext;
 
 internal static class Helper
 {

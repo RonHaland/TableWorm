@@ -1,6 +1,7 @@
-﻿using TableContext.Attributes;
+﻿using AzureTableContext;
+using TableContext.Attributes;
 
-namespace TableContext.Tests.Entities;
+namespace AzureTableContext.Tests.Entities;
 
 public class Tournaments : TableModel
 {
@@ -40,7 +41,7 @@ public class Matches : TableModel
 
 public class Teams : TableModel
 {
-    public int Score {  set; get; }
+    public int Score { set; get; }
     [TableForeignKey]
     public Participants? Player1 { get; set; }
     [TableForeignKey]
@@ -52,5 +53,5 @@ public class Users : TableModel
     public string Name { get; set; } = null!;
     public string Email { get; set; } = null!;
     public string Locale { get; set; } = null!;
-    public string Roles {  get; set; } = null!;
+    public string Roles { get; set; } = null!;
 }

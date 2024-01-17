@@ -1,4 +1,4 @@
-﻿namespace TableContext.Tests;
+﻿namespace AzureTableContext.Tests;
 
 public sealed class TestTableContext : TableContext
 {

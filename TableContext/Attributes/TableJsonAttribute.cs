@@ -1,4 +1,4 @@
-﻿namespace TableContext.Attributes;
+﻿namespace AzureTableContext.Attributes;
 
 /// <summary>
 /// Marks the property for JsonSerialization and storing it as plain text in the table

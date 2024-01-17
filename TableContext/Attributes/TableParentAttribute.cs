@@ -1,4 +1,4 @@
-﻿namespace TableContext.Attributes;
+﻿namespace AzureTableContext.Attributes;
 
 /// <summary>
 /// Marks the property for linking as parent <br />

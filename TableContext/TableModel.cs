@@ -1,9 +1,9 @@
 ﻿using Azure.Data.Tables;
+using AzureTableContext.Attributes;
 using System.Collections;
 using System.Reflection;
-using TableContext.Attributes;
 
-namespace TableContext;
+namespace AzureTableContext;
 
 public abstract class TableModel
 {

@@ -1,6 +1,7 @@
-﻿using TableContext.Attributes;
+﻿using AzureTableContext;
+using Ronhaland.TableContext.Attributes;
 
-namespace TableContext.Tests.Entities;
+namespace AzureTableContext.Tests.Entities;
 
 
 public abstract class CustomTableModel : TableModel
@@ -12,22 +13,21 @@ public abstract class CustomTableModel : TableModel
     }
 }
 
-public class Root : CustomTableModel
+public class Root : TableModel
 {
     [TableForeignKey("MyCustomBaseId")]
     public required Base Base { get; set; }
-    public int MyProperty { get; set; }
     public double Number { get; set; }
     public long Hello { get; set; }
-    public Guid WhatId { get; set; }
-    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    [TableIgnore]
     public List<Branch> Branches { get; set; } = [];
 }
 
 public class Base : CustomTableModel
 {
-    [TableForeignKey]
-    public required Trunk Trunk {  get; set; }
+    [TableComboKey]
+    public List<Branch> Branches { get; set; } = [];
     [TableParent]
     public Root? Root { get; set; }
 }
@@ -41,10 +41,6 @@ public class Trunk : CustomTableModel
 
 public class Branch : CustomTableModel
 {
-    public Branch():base()
-    {
-        
-    }
     public List<Leaf> Leafs { get; set; } = [];
     [TableParent]
     public Root? Root { get; set; }
