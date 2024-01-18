@@ -3,6 +3,7 @@ using AzureTableContext.Attributes;
 using Microsoft.VisualBasic;
 using System.Collections;
 using System.Reflection;
+using System.Text.Json;
 
 namespace AzureTableContext;
 
@@ -46,6 +47,13 @@ public abstract class TableModel
             entity.Add(foreignKeyName, ((TableModel)prop.GetValue(this)!).Id);
         }
 
+        var jsonProps = childProperties.Where(c => c.GetCustomAttribute<TableJsonAttribute>() != null);
+        foreach (var prop in jsonProps)
+        { 
+            var value = prop.GetValue(this);
+            var jsonString = JsonSerializer.Serialize(value);
+            entity.Add(prop.Name, jsonString);
+        }
 
         return entity;
     }

@@ -11,6 +11,7 @@
 		<PackageReadmeFile>readme.md</PackageReadmeFile>
 		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
 		<RootNamespace>AzureTableContext</RootNamespace>
+		<PackageIconUrl>https://raw.githubusercontent.com/RonHaland/TableContext/main/Logo.png</PackageIconUrl>
 	</PropertyGroup>
 
 	<ItemGroup>

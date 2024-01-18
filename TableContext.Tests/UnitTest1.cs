@@ -113,6 +113,7 @@ public class UnitTest1
         {
             Id = "forDelete",
             PartitionKey = "tree",
+            Codes = ["aaa", "bbb", "\\\\"],
             Branches = [
                 new Branch() { PartitionKey = "test" },
                 new Branch() { PartitionKey = "test" },

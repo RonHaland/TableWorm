@@ -12,6 +12,8 @@ public class Root : TableModel
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     [TableIgnore]
     public List<Branch> Branches { get; set; } = [];
+    [TableJson]
+    public List<string> Codes { get; set; } = [];
 }
 
 [TableName("TreeBases")]

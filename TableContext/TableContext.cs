@@ -2,6 +2,7 @@
 using AzureTableContext.Attributes;
 using System.Collections;
 using System.Reflection;
+using System.Text.Json;
 
 namespace AzureTableContext;
 
@@ -180,15 +181,28 @@ public partial class TableContext
                 if (propValue == null) { continue; }
                 prop.SetValue(model, propValue);
             }
-            var foreignKeyProps = model.DirectTablePropertiesMap.TryGetValue(false, out var childProps)
-                                            ? childProps.Where(p => p.GetCustomAttribute<TableForeignKeyAttribute>() != null)
-                                            : [];
-            foreach (var prop in foreignKeyProps)
+            if (model.DirectTablePropertiesMap.TryGetValue(false, out var childProps))
             {
-                var key = prop.GetCustomAttribute<TableForeignKeyAttribute>()?.Name ?? prop.Name + "Id";
-                var propValue = e[key];
-                model._foreignKeys.Add(key, (string)propValue!);
+                var foreignKeyProps = childProps.Where(p => p.GetCustomAttribute<TableForeignKeyAttribute>() != null);
+                foreach (var prop in foreignKeyProps)
+                {
+                    var key = prop.GetCustomAttribute<TableForeignKeyAttribute>()?.Name ?? prop.Name + "Id";
+                    var propValue = e[key];
+                    model._foreignKeys.Add(key, (string)propValue!);
+                }
+
+                var jsonProps = childProps.Where(p => p.GetCustomAttribute<TableJsonAttribute>() != null);
+                foreach (var prop in jsonProps)
+                {
+                    var propValue = (string)e[prop.Name];
+                    var method = typeof(JsonSerializer).GetMethod("Deserialize", BindingFlags.Public | BindingFlags.Static, [typeof(string), typeof(JsonSerializerOptions)]);
+                    var genericMethod = method.MakeGenericMethod([prop.PropertyType]);
+                    var deserializedObject = genericMethod.Invoke(null, [propValue, null]);
+
+                    prop.SetValue(model, deserializedObject);
+                }
             }
+            
 
             return model;
         })).ToList();
