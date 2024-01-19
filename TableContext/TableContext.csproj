@@ -6,12 +6,15 @@
 		<Nullable>enable</Nullable>
 
 		<PackageId>Ronhaland.TableContext</PackageId>
-		<Version>0.1.2-alpha1</Version>
+		<Description>Automatic relations for azure storage account tables</Description>
+		<Version>0.1.2-alpha2</Version>
 		<Authors>RonHaland</Authors>
 		<PackageReadmeFile>readme.md</PackageReadmeFile>
 		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
 		<RootNamespace>AzureTableContext</RootNamespace>
 		<PackageIconUrl>https://raw.githubusercontent.com/RonHaland/TableContext/main/Logo.png</PackageIconUrl>
+		<PackageIcon>Logo.png</PackageIcon>
+		<RepositoryUrl>https://github.com/RonHaland/TableContext</RepositoryUrl>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -21,6 +24,7 @@
 	<ItemGroup>
 		<None Include="..\readme.md" Pack="true" PackagePath="\" />
 		<None Include="..\LICENSE.txt" Pack="true" PackagePath="\" />
+		<None Include="..\Logo.png" Pack="true" PackagePath="\"/>
 	</ItemGroup>
 
 </Project>
