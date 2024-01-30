@@ -7,7 +7,7 @@
 
 		<PackageId>Ronhaland.TableContext</PackageId>
 		<Description>Automatic relations for azure storage account tables</Description>
-		<Version>0.1.2-alpha2</Version>
+		<Version>0.1.3-alpha1</Version>
 		<Authors>RonHaland</Authors>
 		<PackageReadmeFile>readme.md</PackageReadmeFile>
 		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>

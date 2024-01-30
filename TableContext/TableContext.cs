@@ -1,6 +1,7 @@
 ﻿using Azure.Data.Tables;
 using AzureTableContext.Attributes;
 using System.Collections;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json;
 
@@ -482,4 +483,30 @@ public partial class TableContext
 
         await Task.WhenAll(updateParentsTasks);
     }
+
+    public IEnumerable<TTableModel>? Query<TTableModel>(Expression<Func<TTableModel, bool>> expression, int maxDepth = 5) where TTableModel : TableModel
+    {
+        BinaryExpression op = (BinaryExpression)expression.Body;
+        var query = LamdaToOdataTranslator.GetStringFromExpression(op);
+        var result = Query<TTableModel>(query, maxDepth);
+        return result;
+    }
+
+    public TTableModel? Get<TTableModel>(string Id, string? PartitionKey = null, int maxDepth = 5) where TTableModel : TableModel
+    {
+        if (PartitionKey == null)
+        {
+            return Query<TTableModel>(m => m.Id ==  Id, maxDepth)?.Single();
+        }
+        return Query<TTableModel>(m => m.Id == Id && m.PartitionKey == PartitionKey, maxDepth)?.Single();
+    }
+
+    public async Task Delete<TTableModel>(Expression<Func<TTableModel, bool>> expression, int maxDepth = 0) where TTableModel:TableModel
+    {
+        var models = Query(expression, 0)?.ToList();
+        if (models == null || models.Count == 0)
+            return;
+        await Delete(models, maxDepth);
+    }
+
 }
