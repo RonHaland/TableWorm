@@ -1,4 +1,6 @@
-﻿using System.Linq.Expressions;
+﻿using AzureTableContext.Attributes;
+using System.Linq.Expressions;
+using System.Reflection;
 
 namespace AzureTableContext;
 
@@ -34,12 +36,11 @@ internal static class LamdaToOdataTranslator
             case ExpressionType.OrElse:
                 {
                     var binaryExpr = (BinaryExpression)expr;
-                    return $"{GetStringFromExpression(binaryExpr.Left)} or {GetStringFromExpression(binaryExpr.Right)}";
+                    return $"({GetStringFromExpression(binaryExpr.Left)}) or ({GetStringFromExpression(binaryExpr.Right)})";
                 }
             case ExpressionType.MemberAccess:
                 var member = (MemberExpression)expr;
-                var name = member.Member.Name;
-                if (name == "Id") name = "RowKey";
+                var name = UnwrapColumnName(member);
                 return name;
             case ExpressionType.Constant:
                 var constant = (ConstantExpression)expr;
@@ -48,6 +49,39 @@ internal static class LamdaToOdataTranslator
             default:
                 throw new InvalidOperationException($"Unsupported node type '{expr.NodeType}' in expression tree");
         }
+    }
+
+    private static string UnwrapColumnName(MemberExpression member)
+    {
+        var expressions = StackExpressions(member, []);
+        var myProperty = expressions.Pop();
+        var foreignKey = myProperty.Member.GetCustomAttribute<TableForeignKeyAttribute>();
+        var isForeignKey = foreignKey != null;
+
+        if (myProperty.Expression == null && (myProperty.Type.IsAssignableTo(typeof(DateTime)) || myProperty.Type.IsAssignableTo(typeof(DateTimeOffset))))
+        {
+            var prop = ((PropertyInfo)member.Member);
+            var myObj = Activator.CreateInstance(myProperty.Type, []);
+            var val = prop.GetValue(myObj);
+
+            return $"'{(DateTimeOffset)val!:O}'";
+        }
+
+        var name = foreignKey?.Name ?? member.Member.Name;
+        if (name == "Id") name = "RowKey";
+        if (name == "CreatedAt") name = "Timestamp";
+
+        return name;
+    }
+
+    private static Stack<MemberExpression> StackExpressions(MemberExpression expr, Stack<MemberExpression> stack)
+    {
+        stack.Push(expr);
+        if (expr.Expression != null && expr.Expression is MemberExpression expression)
+        {
+            return StackExpressions(expression, stack);
+        }
+        return stack;
     }
 
     private static Dictionary<ExpressionType, string> _operandMap = new() {

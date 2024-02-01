@@ -264,4 +264,33 @@ public class IntegrationTests
         Assert.NotNull(result);
         Assert.Empty(result);
     }
+
+
+    [Fact]
+    public async Task TestLambdaQuery_TestCreatedDate()
+    {
+        await ClearAll();
+        var ctx = Configure();
+
+        var tree1 = new Root
+        {
+            Base = new() { PartitionKey = "" },
+            Hello = 1,
+            Id = "a",
+            PartitionKey = "tree1",
+        };
+        var tree2 = new Root
+        {
+            Base = new() { PartitionKey = "" },
+            Hello = -1,
+            Id = "b",
+            PartitionKey = "tree2",
+        };
+        await ctx.Save(tree1, tree2);
+
+        var result = ctx.Query<Root>(v => v.CreatedAt < DateTimeOffset.UtcNow);
+
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Count());
+    }
 }
