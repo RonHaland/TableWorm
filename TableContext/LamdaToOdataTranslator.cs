@@ -67,6 +67,13 @@ internal static class LamdaToOdataTranslator
             return $"'{(DateTimeOffset)val!:O}'";
         }
 
+        if (myProperty.Expression is ConstantExpression constant)
+        {
+            var value = constant.Value?.GetType().GetField(member.Member.Name)?.GetValue(constant.Value);
+            
+            return $"'{value}'";
+        }
+
         var name = foreignKey?.Name ?? member.Member.Name;
         if (name == "Id") name = "RowKey";
         if (name == "CreatedAt") name = "Timestamp";

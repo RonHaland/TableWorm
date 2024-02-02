@@ -1,4 +1,6 @@
+using AzureTableContext.Attributes;
 using AzureTableContext.Tests.Entities;
+using System.Runtime.CompilerServices;
 
 namespace AzureTableContext.Tests;
 
@@ -53,6 +55,46 @@ public class IntegrationTests
         };
         await ctx.Save(root);
         var tree = ctx.Get<Root>("one");
+        Assert.NotNull(tree);
+        Assert.Equal("one", tree.Id);
+        Assert.NotNull(tree.Base);
+        Assert.NotEmpty(tree.Base.Branches);
+        Assert.Equal(2, tree.Base.Branches.Count);
+    }
+
+    [Fact]
+    public async void TestGet_FindsOneOfTwo()
+    {
+        await ClearAll();
+        var ctx = Configure();
+
+        var root = new Root
+        {
+            Id = "one",
+            PartitionKey = "a",
+            Base = new Base
+            {
+                PartitionKey = "",
+                Branches = [
+                    new Branch { PartitionKey = "" },
+                    new Branch { PartitionKey = "" },
+                ]
+            }
+        };
+        var root2 = new Root
+        {
+            Id = "one",
+            PartitionKey = "b",
+            Base = new Base
+            {
+                PartitionKey = "",
+                Branches = [
+                    new Branch { PartitionKey = "" },
+                ]
+            }
+        };
+        await ctx.Save(root, root2);
+        var tree = ctx.Get<Root>("one", "a");
         Assert.NotNull(tree);
         Assert.Equal("one", tree.Id);
         Assert.NotNull(tree.Base);
@@ -293,4 +335,37 @@ public class IntegrationTests
         Assert.NotNull(result);
         Assert.Equal(2, result.Count());
     }
+
+    [Fact]
+    public async void TestLambdaQuery_UsingParamValues()
+    {
+        await ClearAll();
+        var ctx = Configure();
+
+        var tree1 = new Root
+        {
+            Base = new() { PartitionKey = "" },
+            Hello = 1,
+            Id = "a",
+            PartitionKey = "tree1",
+        };
+        var tree2 = new Root
+        {
+            Base = new() { PartitionKey = "" },
+            Hello = -1,
+            Id = "b",
+            PartitionKey = "tree2",
+        };
+        await ctx.Save(tree1, tree2);
+
+        var id = "a";
+        var pk = "tree1";
+
+        var tree = ctx.Query<Root>(r => r.Id == id && pk == r.PartitionKey)?.First();
+        Assert.NotNull(tree);
+        Assert.Equal("a", tree.Id);
+    }
+
+    [TableName("RankedMatches")]
+    private class RankedMatch : TableModel { }
 }
