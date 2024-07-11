@@ -12,9 +12,9 @@
 		<PackageReadmeFile>readme.md</PackageReadmeFile>
 		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
 		<RootNamespace>TableWorm</RootNamespace>
-		<PackageIconUrl>https://raw.githubusercontent.com/RonHaland/TableContext/main/Logo.png</PackageIconUrl>
+		<PackageIconUrl>https://raw.githubusercontent.com/RonHaland/TableWorm/main/Logo.png</PackageIconUrl>
 		<PackageIcon>Logo.png</PackageIcon>
-		<RepositoryUrl>https://github.com/RonHaland/TableContext</RepositoryUrl>
+		<RepositoryUrl>https://github.com/RonHaland/TableWorm</RepositoryUrl>
 	</PropertyGroup>
 
 	<ItemGroup>
