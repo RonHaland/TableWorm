@@ -1,4 +1,4 @@
-﻿namespace AzureTableContext;
+﻿namespace TableWorm;
 
 internal static class Helper
 {

@@ -5,26 +5,27 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 
-		<PackageId>Ronhaland.TableContext</PackageId>
+		<PackageId>Ronhaland.TableWorm</PackageId>
 		<Description>Automatic relations for azure storage account tables</Description>
-		<Version>0.1.3-alpha2</Version>
+		<Version>0.2.0-alpha1</Version>
 		<Authors>RonHaland</Authors>
 		<PackageReadmeFile>readme.md</PackageReadmeFile>
 		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
-		<RootNamespace>AzureTableContext</RootNamespace>
+		<RootNamespace>TableWorm</RootNamespace>
 		<PackageIconUrl>https://raw.githubusercontent.com/RonHaland/TableContext/main/Logo.png</PackageIconUrl>
 		<PackageIcon>Logo.png</PackageIcon>
 		<RepositoryUrl>https://github.com/RonHaland/TableContext</RepositoryUrl>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Azure.Data.Tables" Version="12.8.0" />
+		<PackageReference Include="Azure.Data.Tables" Version="12.8.3" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.1" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<None Include="..\readme.md" Pack="true" PackagePath="\" />
 		<None Include="..\LICENSE.txt" Pack="true" PackagePath="\" />
-		<None Include="..\Logo.png" Pack="true" PackagePath="\"/>
+		<None Include="..\Logo.png" Pack="true" PackagePath="\" />
 	</ItemGroup>
 
 </Project>

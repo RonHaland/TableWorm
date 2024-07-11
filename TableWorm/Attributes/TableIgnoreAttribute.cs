@@ -1,4 +1,4 @@
-﻿namespace AzureTableContext.Attributes;
+﻿namespace TableWorm.Attributes;
 
 /// <summary>
 /// Marks the property to be ignored when saving or reading from tables

@@ -1,4 +1,4 @@
-﻿namespace AzureTableContext.Attributes;
+﻿namespace TableWorm.Attributes;
 /// <summary>
 /// Marks that the property should be referenced through a 
 /// foreign key on this object rather than using the partitionkey on the child

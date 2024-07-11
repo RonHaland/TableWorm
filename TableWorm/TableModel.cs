@@ -1,11 +1,10 @@
 ﻿using Azure.Data.Tables;
-using AzureTableContext.Attributes;
-using Microsoft.VisualBasic;
 using System.Collections;
 using System.Reflection;
 using System.Text.Json;
+using TableWorm.Attributes;
 
-namespace AzureTableContext;
+namespace TableWorm;
 
 public abstract class TableModel
 {
@@ -49,7 +48,7 @@ public abstract class TableModel
 
         var jsonProps = childProperties.Where(c => c.GetCustomAttribute<TableJsonAttribute>() != null);
         foreach (var prop in jsonProps)
-        { 
+        {
             var value = prop.GetValue(this);
             var jsonString = JsonSerializer.Serialize(value);
             entity.Add(prop.Name, jsonString);

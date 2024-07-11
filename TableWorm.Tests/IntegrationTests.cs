@@ -1,20 +1,47 @@
-using AzureTableContext.Attributes;
-using AzureTableContext.Tests.Entities;
-using System.Runtime.CompilerServices;
+using Microsoft.Extensions.DependencyInjection;
+using TableWorm.Attributes;
+using TableWorm.Tests.Entities;
 
-namespace AzureTableContext.Tests;
+namespace TableWorm.Tests;
+
 
 public class IntegrationTests
 {
-    private TableContext Configure()
+    internal static string LocalConnectionString => "AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;DefaultEndpointsProtocol=http;TableEndpoint=http://127.0.0.1:10002/devstoreaccount1;";
+    private TableStorage Configure()
     {
-        var ctx = new TableContext()
+        var ctx = new TableStorage()
             .ConfigureLocal()
             .RegisterTable<Root>()
             .RegisterTable<Base>()
             .RegisterTable<Branch>()
             .RegisterTable<Leaf>();
         return ctx;
+    }
+
+    private TableStorage TestConfigType1()
+    {
+        IServiceCollection services = new ServiceCollection();
+        services.AddTableStorage(LocalConnectionString, c => 
+           c.AddTable<Root>()
+            .AddTable<Base>()
+            .AddTable<Branch>()
+            .AddTable<Leaf>());
+
+        return (TableStorage)services.First(s => s.ImplementationInstance!.GetType() == typeof(TableStorage)).ImplementationInstance!;
+    }
+
+
+    private TableStorage TestConfigType2()
+    {
+        IServiceCollection services = new ServiceCollection();
+        services.AddTableStorage(c =>
+           c.ConfigureConnectionString(LocalConnectionString)
+            .AddTable<Root>()
+            .AddTable<Base>()
+            .AddTable<Branch>());
+
+        return (TableStorage)services.First(s => s.ImplementationInstance!.GetType() == typeof(TableStorage)).ImplementationInstance!;
     }
 
     private async Task ClearAll()
@@ -39,6 +66,62 @@ public class IntegrationTests
     {
         await ClearAll();
         var ctx = Configure();
+
+        var root = new Root
+        {
+            Id = "one",
+            PartitionKey = "",
+            Base = new Base
+            {
+                PartitionKey = "",
+                Branches = [
+                    new Branch { PartitionKey = "" },
+                    new Branch { PartitionKey = "" },
+                ]
+            }
+        };
+        await ctx.Save(root);
+        var tree = ctx.Get<Root>("one");
+        Assert.NotNull(tree);
+        Assert.Equal("one", tree.Id);
+        Assert.NotNull(tree.Base);
+        Assert.NotEmpty(tree.Base.Branches);
+        Assert.Equal(2, tree.Base.Branches.Count);
+    }
+
+    [Fact]
+    public async void TestConfig1_FindsOne()
+    {
+        await ClearAll();
+        var ctx = TestConfigType1();
+
+        var root = new Root
+        {
+            Id = "one",
+            PartitionKey = "",
+            Base = new Base
+            {
+                PartitionKey = "",
+                Branches = [
+                    new Branch { PartitionKey = "" },
+                    new Branch { PartitionKey = "" },
+                ]
+            }
+        };
+        await ctx.Save(root);
+        var tree = ctx.Get<Root>("one");
+        Assert.NotNull(tree);
+        Assert.Equal("one", tree.Id);
+        Assert.NotNull(tree.Base);
+        Assert.NotEmpty(tree.Base.Branches);
+        Assert.Equal(2, tree.Base.Branches.Count);
+    }
+
+    [Fact]
+    public async void TestConfig2_FindsOne()
+    {
+        await ClearAll();
+        var ctx = TestConfigType2();
 
         var root = new Root
         {

@@ -1,4 +1,4 @@
-﻿namespace AzureTableContext.Attributes;
+﻿namespace TableWorm.Attributes;
 
 [AttributeUsage(AttributeTargets.Class)]
 public class TableNameAttribute : Attribute

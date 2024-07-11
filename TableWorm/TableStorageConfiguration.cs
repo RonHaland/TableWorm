@@ -1,11 +1,11 @@
 ﻿using Azure.Core;
 using Azure.Data.Tables;
-using AzureTableContext.Attributes;
 using System.Reflection;
+using TableWorm.Attributes;
 
-namespace AzureTableContext;
+namespace TableWorm;
 
-public partial class TableContext
+public partial class TableStorage
 {
     private readonly Dictionary<Type, TableClient> _tableClients = new();
     private string? _connectionString = null;
@@ -14,7 +14,7 @@ public partial class TableContext
     private TableClientOptions? _tableOptions = null;
 
 
-    public TableContext RegisterTable<TTableModel>() where TTableModel : TableModel
+    public TableStorage RegisterTable<TTableModel>() where TTableModel : TableModel
     {
         var nameAttribute = typeof(TTableModel).GetCustomAttribute<TableNameAttribute>();
         var tableName = nameAttribute != null ? nameAttribute.Name : typeof(TTableModel).Name;
@@ -43,12 +43,12 @@ public partial class TableContext
         throw new InvalidOperationException("Invalid Configuration, make sure to call ConfigureConnectionString or ConfigureTokenCredential before registering tables");
     }
 
-    public TableContext ConfigureLocal()
+    public TableStorage ConfigureLocal()
     {
         return ConfigureConnectionString(Helper.LocalConnectionString);
     }
 
-    public TableContext ConfigureConnectionString(string connectionString)
+    public TableStorage ConfigureConnectionString(string connectionString)
     {
         _connectionString = connectionString;
         _tokenCredential = null;
@@ -56,11 +56,17 @@ public partial class TableContext
         return this;
     }
 
-    public TableContext ConfigureTokenCredential(TokenCredential tokenCredential, string endpoint)
+    public TableStorage ConfigureTokenCredential(TokenCredential tokenCredential, string endpoint)
     {
         _connectionString = null;
         _endpoint = endpoint;
         _tokenCredential = tokenCredential;
+        return this;
+    }
+
+    public TableStorage ConfigureClientOptions(TableClientOptions opts)
+    {
+        _tableOptions = opts;
         return this;
     }
 }

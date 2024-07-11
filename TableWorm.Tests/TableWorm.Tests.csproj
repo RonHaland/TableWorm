@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -7,7 +7,7 @@
 
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-	<RootNamespace>AzureTableContext.Tests</RootNamespace>
+	<RootNamespace>TableWorm.Tests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\TableContext\TableContext.csproj" />
+    <ProjectReference Include="..\TableWorm\TableWorm.csproj" />
   </ItemGroup>
 
 </Project>
