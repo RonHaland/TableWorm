@@ -1,4 +1,4 @@
-﻿namespace AzureTableContext.Attributes;
+﻿namespace TableWorm.Attributes;
 
 /// <summary>
 /// Marks the property for linking through a combination of the parents <strong>PartitionKey</strong> and <strong>RowKey</strong><br />

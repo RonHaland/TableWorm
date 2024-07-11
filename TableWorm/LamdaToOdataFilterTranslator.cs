@@ -1,10 +1,10 @@
-﻿using AzureTableContext.Attributes;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Reflection;
+using TableWorm.Attributes;
 
-namespace AzureTableContext;
+namespace TableWorm;
 
-internal static class LamdaToOdataTranslator
+internal static class LamdaToOdataFilterTranslator
 {
     public static string GetStringFromExpression(Expression expr)
     {
@@ -60,7 +60,7 @@ internal static class LamdaToOdataTranslator
 
         if (myProperty.Expression == null && (myProperty.Type.IsAssignableTo(typeof(DateTime)) || myProperty.Type.IsAssignableTo(typeof(DateTimeOffset))))
         {
-            var prop = ((PropertyInfo)member.Member);
+            var prop = (PropertyInfo)member.Member;
             var myObj = Activator.CreateInstance(myProperty.Type, []);
             var val = prop.GetValue(myObj);
 
@@ -70,7 +70,7 @@ internal static class LamdaToOdataTranslator
         if (myProperty.Expression is ConstantExpression constant)
         {
             var value = constant.Value?.GetType().GetField(member.Member.Name)?.GetValue(constant.Value);
-            
+
             return $"'{value}'";
         }
 

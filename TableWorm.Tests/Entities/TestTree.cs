@@ -1,6 +1,7 @@
-﻿using AzureTableContext.Attributes;
+﻿using TableWorm.Attributes;
+using TableWorm;
 
-namespace AzureTableContext.Tests.Entities;
+namespace TableWorm.Tests.Entities;
 
 [TableName("Roots")]
 public class Root : TableModel

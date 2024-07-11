@@ -1,13 +1,13 @@
 ﻿using Azure.Data.Tables;
-using AzureTableContext.Attributes;
 using System.Collections;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json;
+using TableWorm.Attributes;
 
-namespace AzureTableContext;
+namespace TableWorm;
 
-public partial class TableContext
+public partial class TableStorage
 {
     private TableClient? GetClient<TTableModel>() where TTableModel : TableModel
     {
@@ -487,7 +487,7 @@ public partial class TableContext
     public IEnumerable<TTableModel>? Query<TTableModel>(Expression<Func<TTableModel, bool>> expression, int maxDepth = 5) where TTableModel : TableModel
     {
         BinaryExpression op = (BinaryExpression)expression.Body;
-        var query = LamdaToOdataTranslator.GetStringFromExpression(op);
+        var query = LamdaToOdataFilterTranslator.GetStringFromExpression(op);
         var result = Query<TTableModel>(query, maxDepth);
         return result;
     }
