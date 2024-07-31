@@ -113,7 +113,7 @@ public partial class TableStorage
         }
         return [];
     }
-    public async Task<IEnumerable<TTableModel>?> QueryAsync<TTableModel>(string query, int maxDepth = 5) where TTableModel : TableModel
+    public async Task<IEnumerable<TTableModel>?> QueryAsync<TTableModel>(string query, int maxDepth = 5, CancellationToken cancellationToken = default) where TTableModel : TableModel
     {
         var client = GetClient<TTableModel>();
         if (client == null) return null;
@@ -122,7 +122,7 @@ public partial class TableStorage
         var resultList = result.ToList();
         if (maxDepth >= 0)
         {
-            var models = await ConstructFromAsync<TTableModel>(resultList, maxDepth);
+            var models = await ConstructFromAsync<TTableModel>(resultList, cancellationToken, maxDepth);
             return models;
         }
         return [];
@@ -165,7 +165,7 @@ public partial class TableStorage
 
         return models;
     }
-    internal async Task<List<TTableModel>> ConstructFromAsync<TTableModel>(List<TableEntity> entities, int maxDepth = 5) where TTableModel : TableModel
+    internal async Task<List<TTableModel>> ConstructFromAsync<TTableModel>(List<TableEntity> entities, CancellationToken cancellationToken, int maxDepth = 5) where TTableModel : TableModel
     {
         var modelTasks = entities.Select(async e => await Task.Run(() => 
         {
@@ -197,7 +197,7 @@ public partial class TableStorage
                 {
                     var propValue = (string)e[prop.Name];
                     var method = typeof(JsonSerializer).GetMethod("Deserialize", BindingFlags.Public | BindingFlags.Static, [typeof(string), typeof(JsonSerializerOptions)]);
-                    var genericMethod = method.MakeGenericMethod([prop.PropertyType]);
+                    var genericMethod = method!.MakeGenericMethod([prop.PropertyType]);
                     var deserializedObject = genericMethod.Invoke(null, [propValue, null]);
 
                     prop.SetValue(model, deserializedObject);
@@ -206,14 +206,19 @@ public partial class TableStorage
             
 
             return model;
-        })).ToList();
+        },cancellationToken)).ToList();
 
         await Task.WhenAll(modelTasks);
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return new();
+        }
+
         var models = modelTasks.Select(t => t.Result).ToList();
 
         if (maxDepth > 0)
         {
-            await PopulateChildElementsAsync(models, maxDepth - 1);
+            await PopulateChildElementsAsync(models, maxDepth - 1, cancellationToken);
         }
 
         return models;
@@ -245,7 +250,7 @@ public partial class TableStorage
         }
 
     }
-    private async Task PopulateChildElementsAsync<TTableModel>(List<TTableModel> parents, int maxDepth) where TTableModel : TableModel
+    private async Task PopulateChildElementsAsync<TTableModel>(List<TTableModel> parents, int maxDepth, CancellationToken cancellationToken) where TTableModel : TableModel
     {
         var firstParent = parents.FirstOrDefault();
         if (firstParent == null || !firstParent.DirectTablePropertiesMap.TryGetValue(false, out var childProps)) { return; }
@@ -262,11 +267,11 @@ public partial class TableStorage
             {
                 var foreignKeyField = foreignKeyProp.Name ?? prop.Name + "Id";
                 var parentsWithForeignKey = parents.Where(p => p._foreignKeys.ContainsKey(foreignKeyField)).ToList();
-                await PopulateChildrenByForeignKeysAsync(parentsWithForeignKey, foreignKeyField, prop, maxDepth);
+                await PopulateChildrenByForeignKeysAsync(parentsWithForeignKey, foreignKeyField, prop, maxDepth, cancellationToken);
             }
             else
             {
-                await PopulateChildrenByPartitionKeysAsync(parents, prop, maxDepth);
+                await PopulateChildrenByPartitionKeysAsync(parents, prop, maxDepth, cancellationToken);
             }
         });
 
@@ -308,7 +313,7 @@ public partial class TableStorage
             }
         }
     }
-    private async Task PopulateChildrenByForeignKeysAsync<TTableModel>(List<TTableModel> parents, string foreignKeyField, PropertyInfo childProperty, int maxDepth) where TTableModel : TableModel
+    private async Task PopulateChildrenByForeignKeysAsync<TTableModel>(List<TTableModel> parents, string foreignKeyField, PropertyInfo childProperty, int maxDepth, CancellationToken cancellationToken) where TTableModel : TableModel
     {
         if (!_tableClients.TryGetValue(childProperty.PropertyType, out var tableClient)) { return; }
 
@@ -334,7 +339,7 @@ public partial class TableStorage
         var children = fetchEntitiesTasks.SelectMany(e => e.Result).ToList();
 
         var constructmethod = GetType().GetMethod(nameof(ConstructFromAsync), BindingFlags.NonPublic | BindingFlags.Instance)?.MakeGenericMethod(childProperty.PropertyType);
-        var constructFromTask = (Task)constructmethod!.Invoke(this, [children, maxDepth])!;
+        var constructFromTask = (Task)constructmethod!.Invoke(this, [children, cancellationToken, maxDepth])!;
 
         if (constructFromTask == null) return;
 
@@ -412,7 +417,7 @@ public partial class TableStorage
             }
         }
     }
-    private async Task PopulateChildrenByPartitionKeysAsync<TTableModel>(List<TTableModel> parents, PropertyInfo childProperty, int maxDepth) where TTableModel : TableModel
+    private async Task PopulateChildrenByPartitionKeysAsync<TTableModel>(List<TTableModel> parents, PropertyInfo childProperty, int maxDepth, CancellationToken cancellationToken) where TTableModel : TableModel
     {
         var isCollection = childProperty.PropertyType.IsAssignableTo(typeof(IEnumerable<TableModel>));
         var childType = isCollection
@@ -444,7 +449,7 @@ public partial class TableStorage
             ? childProperty.PropertyType.GetGenericArguments().First(a => a.IsAssignableTo(typeof(TableModel)))
             : childProperty.PropertyType;
         var constructmethod = GetType().GetMethod(nameof(ConstructFromAsync), BindingFlags.NonPublic | BindingFlags.Instance)?.MakeGenericMethod(generic);
-        var constructFromTask = (Task)constructmethod!.Invoke(this, [children, maxDepth])!;
+        var constructFromTask = (Task)constructmethod!.Invoke(this, [children, cancellationToken, maxDepth])!;
 
         if (constructFromTask == null) return;
 
@@ -489,6 +494,14 @@ public partial class TableStorage
         BinaryExpression op = (BinaryExpression)expression.Body;
         var query = LamdaToOdataFilterTranslator.GetStringFromExpression(op);
         var result = Query<TTableModel>(query, maxDepth);
+        return result;
+    }
+
+    public async Task<IEnumerable<TTableModel>?> QueryAsync<TTableModel>(Expression<Func<TTableModel, bool>> expression, int maxDepth = 5, CancellationToken cancellationToken = default) where TTableModel : TableModel
+    {
+        BinaryExpression op = (BinaryExpression)expression.Body;
+        var query = LamdaToOdataFilterTranslator.GetStringFromExpression(op);
+        var result = await QueryAsync<TTableModel>(query, maxDepth, cancellationToken);
         return result;
     }
 

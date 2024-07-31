@@ -332,6 +332,38 @@ public class IntegrationTests
     }
 
     [Fact]
+    public async Task TestLambdaQueryAsync_ShouldFindBoth()
+    {
+        await ClearAll();
+        var ctx = Configure();
+
+        var tree1 = new Root
+        {
+            Base = new() { PartitionKey = "" },
+            Hello = -1,
+            Id = "a",
+            PartitionKey = "tree1",
+        };
+        var tree2 = new Root
+        {
+            Base = new() { PartitionKey = "" },
+            Hello = 1,
+            Id = "b",
+            PartitionKey = "tree2",
+        };
+        await ctx.Save(tree1, tree2);
+
+        var result = await ctx.QueryAsync<Root>(v => v.PartitionKey == "tree2" && v.Hello > 0 || v.Id == "a");
+
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.Contains(result, r => r.Id == "a");
+        Assert.Contains(result, r => r.Id == "b");
+
+        await ctx.Delete(result, 1);
+    }
+
+    [Fact]
     public async Task TestLambdaQuery_ShouldFindOne()
     {
         await ClearAll();

@@ -1,5 +1,4 @@
 ﻿using TableWorm.Attributes;
-using TableWorm;
 
 namespace TableWorm.Tests.Entities;
 
