@@ -1,3 +1,4 @@
+using Azure.Data.Tables;
 using Microsoft.Extensions.DependencyInjection;
 using TableWorm.Attributes;
 using TableWorm.Tests.Entities;
@@ -7,7 +8,9 @@ namespace TableWorm.Tests;
 
 public class IntegrationTests
 {
-    internal static string LocalConnectionString => "AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;DefaultEndpointsProtocol=http;TableEndpoint=http://127.0.0.1:10002/devstoreaccount1;";
+    private static string LocalConnectionString =>
+        "AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;DefaultEndpointsProtocol=http;TableEndpoint=http://127.0.0.1:10002/devstoreaccount1;";
+
     private TableStorage Configure()
     {
         var ctx = new TableStorage()
@@ -22,13 +25,14 @@ public class IntegrationTests
     private TableStorage TestConfigType1()
     {
         IServiceCollection services = new ServiceCollection();
-        services.AddTableStorage(LocalConnectionString, c => 
-           c.AddTable<Root>()
-            .AddTable<Base>()
-            .AddTable<Branch>()
-            .AddTable<Leaf>());
+        services.AddTableStorage(LocalConnectionString, c =>
+            c.AddTable<Root>()
+                .AddTable<Base>()
+                .AddTable<Branch>()
+                .AddTable<Leaf>());
 
-        return (TableStorage)services.First(s => s.ImplementationInstance!.GetType() == typeof(TableStorage)).ImplementationInstance!;
+        return (TableStorage)services.First(s => s.ImplementationInstance!.GetType() == typeof(TableStorage))
+            .ImplementationInstance!;
     }
 
 
@@ -36,12 +40,13 @@ public class IntegrationTests
     {
         IServiceCollection services = new ServiceCollection();
         services.AddTableStorage(c =>
-           c.ConfigureConnectionString(LocalConnectionString)
-            .AddTable<Root>()
-            .AddTable<Base>()
-            .AddTable<Branch>());
+            c.ConfigureConnectionString(LocalConnectionString)
+                .AddTable<Root>()
+                .AddTable<Base>()
+                .AddTable<Branch>());
 
-        return (TableStorage)services.First(s => s.ImplementationInstance!.GetType() == typeof(TableStorage)).ImplementationInstance!;
+        return (TableStorage)services.First(s => s.ImplementationInstance!.GetType() == typeof(TableStorage))
+            .ImplementationInstance!;
     }
 
     private async Task ClearAll()
@@ -62,7 +67,7 @@ public class IntegrationTests
     }
 
     [Fact]
-    public async void TestGet_FindsOne()
+    public async Task TestGet_FindsOne()
     {
         await ClearAll();
         var ctx = Configure();
@@ -74,7 +79,8 @@ public class IntegrationTests
             Base = new Base
             {
                 PartitionKey = "",
-                Branches = [
+                Branches =
+                [
                     new Branch { PartitionKey = "" },
                     new Branch { PartitionKey = "" },
                 ]
@@ -90,7 +96,7 @@ public class IntegrationTests
     }
 
     [Fact]
-    public async void TestConfig1_FindsOne()
+    public async Task TestConfig1_FindsOne()
     {
         await ClearAll();
         var ctx = TestConfigType1();
@@ -102,7 +108,8 @@ public class IntegrationTests
             Base = new Base
             {
                 PartitionKey = "",
-                Branches = [
+                Branches =
+                [
                     new Branch { PartitionKey = "" },
                     new Branch { PartitionKey = "" },
                 ]
@@ -118,7 +125,7 @@ public class IntegrationTests
     }
 
     [Fact]
-    public async void TestConfig2_FindsOne()
+    public async Task TestConfig2_FindsOne()
     {
         await ClearAll();
         var ctx = TestConfigType2();
@@ -130,7 +137,8 @@ public class IntegrationTests
             Base = new Base
             {
                 PartitionKey = "",
-                Branches = [
+                Branches =
+                [
                     new Branch { PartitionKey = "" },
                     new Branch { PartitionKey = "" },
                 ]
@@ -146,7 +154,7 @@ public class IntegrationTests
     }
 
     [Fact]
-    public async void TestGet_FindsOneOfTwo()
+    public async Task TestGet_FindsOneOfTwo()
     {
         await ClearAll();
         var ctx = Configure();
@@ -158,7 +166,8 @@ public class IntegrationTests
             Base = new Base
             {
                 PartitionKey = "",
-                Branches = [
+                Branches =
+                [
                     new Branch { PartitionKey = "" },
                     new Branch { PartitionKey = "" },
                 ]
@@ -171,7 +180,8 @@ public class IntegrationTests
             Base = new Base
             {
                 PartitionKey = "",
-                Branches = [
+                Branches =
+                [
                     new Branch { PartitionKey = "" },
                 ]
             }
@@ -198,7 +208,8 @@ public class IntegrationTests
             Base = new Base
             {
                 PartitionKey = "",
-                Branches = [
+                Branches =
+                [
                     new Branch { PartitionKey = "" },
                     new Branch { PartitionKey = "" },
                 ]
@@ -211,7 +222,8 @@ public class IntegrationTests
             Base = new Base
             {
                 PartitionKey = "",
-                Branches = [
+                Branches =
+                [
                     new Branch { PartitionKey = "" },
                     new Branch { PartitionKey = "" },
                 ]
@@ -224,7 +236,8 @@ public class IntegrationTests
             Base = new Base
             {
                 PartitionKey = "",
-                Branches = [
+                Branches =
+                [
                     new Branch { PartitionKey = "" },
                     new Branch { PartitionKey = "" },
                 ]
@@ -236,9 +249,11 @@ public class IntegrationTests
 
         Assert.NotNull(tree);
         Assert.NotNull(treeAsync);
-        Assert.Equal(tree.First().Id, treeAsync.First().Id);
-        Assert.Equal(tree.Last().Id, treeAsync.Last().Id);
-        Assert.Equal(tree.Count(), treeAsync.Count());
+        var treeArray = tree as Root[] ?? tree.ToArray();
+        var asyncTreeArray = treeAsync as Root[] ?? treeAsync.ToArray();
+        Assert.Equal(treeArray.First().Id, asyncTreeArray.First().Id);
+        Assert.Equal(treeArray.Last().Id, asyncTreeArray.Last().Id);
+        Assert.Equal(treeArray.Length, asyncTreeArray.Length);
     }
 
     [Fact]
@@ -251,7 +266,8 @@ public class IntegrationTests
             Base = new Base
             {
                 PartitionKey = "",
-                Branches = [
+                Branches =
+                [
                     new Branch { PartitionKey = "" },
                     new Branch { PartitionKey = "" },
                 ]
@@ -264,7 +280,8 @@ public class IntegrationTests
             Base = new Base
             {
                 PartitionKey = "",
-                Branches = [
+                Branches =
+                [
                     new Branch { PartitionKey = "" },
                     new Branch { PartitionKey = "" },
                 ]
@@ -277,7 +294,8 @@ public class IntegrationTests
             Base = new Base
             {
                 PartitionKey = "",
-                Branches = [
+                Branches =
+                [
                     new Branch { PartitionKey = "" },
                     new Branch { PartitionKey = "" },
                 ]
@@ -321,7 +339,7 @@ public class IntegrationTests
         };
         await ctx.Save(tree1, tree2);
 
-        var result = ctx.Query<Root>(v => v.PartitionKey == "tree2" && v.Hello > 0 || v.Id == "a");
+        var result = ctx.Query<Root>(v => v.PartitionKey == "tree2" && v.Hello > 0 || v.Id == "a")?.ToArray();
 
         Assert.NotNull(result);
         Assert.NotEmpty(result);
@@ -356,11 +374,12 @@ public class IntegrationTests
         var result = await ctx.QueryAsync<Root>(v => v.PartitionKey == "tree2" && v.Hello > 0 || v.Id == "a");
 
         Assert.NotNull(result);
-        Assert.NotEmpty(result);
-        Assert.Contains(result, r => r.Id == "a");
-        Assert.Contains(result, r => r.Id == "b");
+        var resultArray = result as Root[] ?? result.ToArray();
+        Assert.NotEmpty(resultArray);
+        Assert.Contains(resultArray, r => r.Id == "a");
+        Assert.Contains(resultArray, r => r.Id == "b");
 
-        await ctx.Delete(result, 1);
+        await ctx.Delete(resultArray, 1);
     }
 
     [Fact]
@@ -388,10 +407,11 @@ public class IntegrationTests
         var result = ctx.Query<Root>(v => v.PartitionKey == "tree2" && v.Hello > 0 || v.Id == "a");
 
         Assert.NotNull(result);
-        Assert.NotEmpty(result);
-        Assert.Contains(result, r => r.Id == "a");
+        var resultArray = result as Root[] ?? result.ToArray();
+        Assert.NotEmpty(resultArray);
+        Assert.Contains(resultArray, r => r.Id == "a");
 
-        await ctx.Delete(result, 1);
+        await ctx.Delete(resultArray, 1);
     }
 
     [Fact]
@@ -431,14 +451,14 @@ public class IntegrationTests
 
         var tree1 = new Root
         {
-            Base = new() { PartitionKey = "" },
+            Base = new Base { PartitionKey = "" },
             Hello = 1,
             Id = "a",
             PartitionKey = "tree1",
         };
         var tree2 = new Root
         {
-            Base = new() { PartitionKey = "" },
+            Base = new Base { PartitionKey = "" },
             Hello = -1,
             Id = "b",
             PartitionKey = "tree2",
@@ -452,21 +472,21 @@ public class IntegrationTests
     }
 
     [Fact]
-    public async void TestLambdaQuery_UsingParamValues()
+    public async Task TestLambdaQuery_UsingParamValues()
     {
         await ClearAll();
         var ctx = Configure();
 
         var tree1 = new Root
         {
-            Base = new() { PartitionKey = "" },
+            Base = new Base { PartitionKey = "" },
             Hello = 1,
             Id = "a",
             PartitionKey = "tree1",
         };
         var tree2 = new Root
         {
-            Base = new() { PartitionKey = "" },
+            Base = new Base { PartitionKey = "" },
             Hello = -1,
             Id = "b",
             PartitionKey = "tree2",
@@ -480,7 +500,33 @@ public class IntegrationTests
         Assert.NotNull(tree);
         Assert.Equal("a", tree.Id);
     }
+    
+    private class TestParent : TableModel
+    {
+        public TestChild[] Children { get; set; }
+    }
 
-    [TableName("RankedMatches")]
-    private class RankedMatch : TableModel { }
+    private class TestChild : TableModel
+    {
+        [TableParent]
+        public TestParent Parent { get; set; }
+    };
+
+    [Fact]
+    public async Task TestDefaultSetup()
+    {
+        await ClearAll();
+        var ctx = Configure().RegisterTable<TestParent>().RegisterTable<TestChild>();
+        var testCase = new TestParent
+        {
+            PartitionKey = "test",
+            Children = [new TestChild()],
+        };
+        
+        await ctx.Save(testCase);
+        var result = await ctx.QueryAsync<TestParent>(v => v.PartitionKey == "test");
+
+        await ctx.Delete(result ?? [], 1);
+    }
+
 }

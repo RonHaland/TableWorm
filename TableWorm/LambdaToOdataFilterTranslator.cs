@@ -1,18 +1,16 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using TableWorm.Attributes;
 
+[assembly: InternalsVisibleTo("TableWorm.Tests")]
 namespace TableWorm;
 
-internal static class LamdaToOdataFilterTranslator
+internal static class LambdaToOdataFilterTranslator
 {
     public static string GetStringFromExpression(Expression expr)
     {
-        if (expr == null)
-        {
-            return "";
-        }
-
+        var (needsSubQueries, expressionSide) = NeedsSubQueries(expr);
         switch (expr.NodeType)
         {
             case ExpressionType.Equal:
@@ -51,6 +49,21 @@ internal static class LamdaToOdataFilterTranslator
         }
     }
 
+    //if either side of a binary expression is accessing members (properties) that are not directly from the
+    //parameter of the lambda function, i.e. members from child classes, we will need make and execute subqueries to
+    //get the Ids of the children
+    private static (bool, Helper.ExpressionSide?) NeedsSubQueries(Expression expr)
+    {
+        return expr switch
+        {
+            BinaryExpression { Left: MemberExpression { Expression: not null and not ParameterExpression } } => (true,
+                Helper.ExpressionSide.Left),
+            BinaryExpression { Right: MemberExpression { Expression: not null and not ParameterExpression } } => (true,
+                Helper.ExpressionSide.Right),
+            _ => (false, null)
+        };
+    }
+
     private static string UnwrapColumnName(MemberExpression member)
     {
         var expressions = StackExpressions(member, []);
@@ -76,7 +89,7 @@ internal static class LamdaToOdataFilterTranslator
 
         var name = foreignKey?.Name ?? member.Member.Name;
         if (name == "Id") name = "RowKey";
-        if (name == "CreatedAt") name = "Timestamp";
+        if (name == "ModifiedDate") name = "Timestamp";
 
         return name;
     }

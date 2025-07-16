@@ -231,11 +231,7 @@ public partial class TableStorage
 
         foreach (var prop in childProps)
         {
-            var isCollection = prop.PropertyType.IsAssignableTo(typeof(IEnumerable<TableModel>));
             var foreignKeyProp = prop.GetCustomAttribute<TableForeignKeyAttribute>();
-            var propType = isCollection
-                ? prop.PropertyType.GetGenericArguments().First(a => a.IsAssignableTo(typeof(TableModel)))
-                : prop.PropertyType;
 
             if (foreignKeyProp != null)
             {
@@ -257,11 +253,7 @@ public partial class TableStorage
 
         var childPropsTasks = childProps.Select(async prop =>
         {
-            var isCollection = prop.PropertyType.IsAssignableTo(typeof(IEnumerable<TableModel>));
             var foreignKeyProp = prop.GetCustomAttribute<TableForeignKeyAttribute>();
-            var propType = isCollection
-                ? prop.PropertyType.GetGenericArguments().First(a => a.IsAssignableTo(typeof(TableModel)))
-                : prop.PropertyType;
 
             if (foreignKeyProp != null)
             {
@@ -365,9 +357,7 @@ public partial class TableStorage
     private void PopulateChildrenByPartitionKeys<TTableModel>(List<TTableModel> parents, PropertyInfo childProperty, int maxDepth) where TTableModel : TableModel
     {
         var isCollection = childProperty.PropertyType.IsAssignableTo(typeof(IEnumerable<TableModel>));
-        var childType = isCollection
-                    ? childProperty.PropertyType.GetGenericArguments().First(g => g.IsAssignableTo(typeof(TableModel)))
-                    : childProperty.PropertyType;
+        var childType = GetTypeOrCollectionType<TTableModel>(childProperty);
         if (!_tableClients.TryGetValue(childType, out var tableClient)) { return; }
 
         var isComboKey = childProperty.GetCustomAttribute<TableComboKeyAttribute>() != null;
@@ -420,9 +410,8 @@ public partial class TableStorage
     private async Task PopulateChildrenByPartitionKeysAsync<TTableModel>(List<TTableModel> parents, PropertyInfo childProperty, int maxDepth, CancellationToken cancellationToken) where TTableModel : TableModel
     {
         var isCollection = childProperty.PropertyType.IsAssignableTo(typeof(IEnumerable<TableModel>));
-        var childType = isCollection
-                    ? childProperty.PropertyType.GetGenericArguments().First(g => g.IsAssignableTo(typeof(TableModel)))
-                    : childProperty.PropertyType;
+        var childType = GetTypeOrCollectionType<TTableModel>(childProperty);
+        
         if (!_tableClients.TryGetValue(childType, out var tableClient)) { return; }
 
         var isComboKey = childProperty.GetCustomAttribute<TableComboKeyAttribute>() != null;
@@ -445,9 +434,7 @@ public partial class TableStorage
         }));
         await Task.WhenAll(fetchEntitiesTasks);
         var children = fetchEntitiesTasks.SelectMany(e => e.Result).ToList();
-        var generic = isCollection
-            ? childProperty.PropertyType.GetGenericArguments().First(a => a.IsAssignableTo(typeof(TableModel)))
-            : childProperty.PropertyType;
+        var generic = GetTypeOrCollectionType<TTableModel>(childProperty);
         var constructmethod = GetType().GetMethod(nameof(ConstructFromAsync), BindingFlags.NonPublic | BindingFlags.Instance)?.MakeGenericMethod(generic);
         var constructFromTask = (Task)constructmethod!.Invoke(this, [children, cancellationToken, maxDepth])!;
 
@@ -464,19 +451,35 @@ public partial class TableStorage
             var key = isComboKey ? $"{parent.PartitionKey}_{parent.Id}" : parent.Id;
             if (modelDict.TryGetValue(key, out var list))
             {
-                object? childValue = list.FirstOrDefault();
+                var tableModels = list as TableModel[] ?? list.ToArray();
+                object? childValue = tableModels.FirstOrDefault();
                 if (isCollection)
                 {
-                    var genericListType = childProperty.PropertyType;
-                    var enumerableType = typeof(IList<>).MakeGenericType(genericListType.GenericTypeArguments.First());
-                    var ctor = genericListType.GetConstructor([]);
-                    var newList = ctor?.Invoke([]) as IList;
-                    foreach (var item in list)
+                    if (childProperty.PropertyType.IsArray)
                     {
-                        item.SetParent(parent);
-                        newList?.Add(item);
+                        var requireSize = tableModels?.Length ?? 16;
+                        var array = (TableModel[])childProperty.PropertyType.GetConstructor([typeof(int)])!.Invoke([requireSize]);
+                        for (var i = 0; i < tableModels?.Length; i++)
+                        {
+                            var item = tableModels.ElementAt(i);
+                            item.SetParent(parent);
+                            array[i] = item;
+                        }
+                        
+                        childValue = array;
                     }
-                    childValue = newList;
+                    else
+                    {
+                        var genericListType = childProperty.PropertyType;
+                        var ctor = genericListType.GetConstructor([]);
+                        var newList = ctor?.Invoke([]) as IList;
+                        foreach (var item in tableModels)
+                        {
+                            item.SetParent(parent);
+                            newList?.Add(item);
+                        }
+                        childValue = newList;
+                    }
                 }
                 else if (childValue != null)
                 {
@@ -489,10 +492,24 @@ public partial class TableStorage
         await Task.WhenAll(updateParentsTasks);
     }
 
+    private static Type GetTypeOrCollectionType<TTableModel>(PropertyInfo property) where TTableModel : TableModel
+    {
+        var isCollection = property.PropertyType.IsAssignableTo(typeof(IEnumerable<TableModel>));
+        if (!isCollection)
+            return property.PropertyType;
+        
+        if (property.PropertyType.IsArray)
+            return property.PropertyType.GetElementType()!;
+        
+        return property.PropertyType.GetGenericArguments().Length > 0
+            ? property.PropertyType.GetGenericArguments().First(g => g.IsAssignableTo(typeof(TableModel)))
+            : property.PropertyType;
+    }
+
     public IEnumerable<TTableModel>? Query<TTableModel>(Expression<Func<TTableModel, bool>> expression, int maxDepth = 5) where TTableModel : TableModel
     {
         BinaryExpression op = (BinaryExpression)expression.Body;
-        var query = LamdaToOdataFilterTranslator.GetStringFromExpression(op);
+        var query = LambdaToOdataFilterTranslator.GetStringFromExpression(op);
         var result = Query<TTableModel>(query, maxDepth);
         return result;
     }
@@ -500,7 +517,7 @@ public partial class TableStorage
     public async Task<IEnumerable<TTableModel>?> QueryAsync<TTableModel>(Expression<Func<TTableModel, bool>> expression, int maxDepth = 5, CancellationToken cancellationToken = default) where TTableModel : TableModel
     {
         BinaryExpression op = (BinaryExpression)expression.Body;
-        var query = LamdaToOdataFilterTranslator.GetStringFromExpression(op);
+        var query = LambdaToOdataFilterTranslator.GetStringFromExpression(op);
         var result = await QueryAsync<TTableModel>(query, maxDepth, cancellationToken);
         return result;
     }
