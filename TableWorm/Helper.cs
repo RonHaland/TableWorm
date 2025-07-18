@@ -24,6 +24,7 @@ internal static class Helper
     internal enum ExpressionSide
     {
         Left,
-        Right
+        Right,
+        Both,
     }
 }

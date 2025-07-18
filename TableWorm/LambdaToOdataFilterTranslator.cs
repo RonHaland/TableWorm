@@ -2,15 +2,42 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using TableWorm.Attributes;
+using TableWorm.Models;
 
 [assembly: InternalsVisibleTo("TableWorm.Tests")]
 namespace TableWorm;
 
 internal static class LambdaToOdataFilterTranslator
 {
-    public static string GetStringFromExpression(Expression expr)
+    public static QueryNode GetStringFromExpression(Expression expr)
     {
         var (needsSubQueries, expressionSide) = NeedsSubQueries(expr);
+        if (needsSubQueries)
+        {
+            ThrowIfNotSameProperty(expr, expressionSide);
+            var binaryExpression = (BinaryExpression)expr;
+            var otherExpr = (expressionSide != Helper.ExpressionSide.Right ? binaryExpression.Right :  binaryExpression.Left);
+            var memberExpr = (MemberExpression)(expressionSide != Helper.ExpressionSide.Right ? binaryExpression.Left :  binaryExpression.Right);
+            
+            var operand = OperandMap[expr.NodeType];
+            var tableType = memberExpr.Expression!.Type;
+            var subQueryId = Guid.NewGuid();
+
+            var queryString = $"${ subQueryId.ToString() }";
+            var left = GetStringFromExpression(memberExpr);
+            var right = GetStringFromExpression(otherExpr);
+            return new QueryNode(queryString)
+            {
+                SubQueries =
+                [
+                    new QueryNode($"{left.QueryString} {operand} {right.QueryString}")
+                    {
+                        TableModelType = tableType,
+                        SubQueryId = subQueryId
+                    }
+                ]
+            };
+        }
         switch (expr.NodeType)
         {
             case ExpressionType.Equal:
@@ -21,31 +48,59 @@ internal static class LambdaToOdataFilterTranslator
             case ExpressionType.LessThanOrEqual:
                 {
                     var binaryExpr = (BinaryExpression)expr;
-                    var leftParam = binaryExpr.Left;
-                    var rightParam = binaryExpr.Right;
-                    var operand = _operandMap[expr.NodeType];
-                    return $"{GetStringFromExpression(leftParam)} {operand} {GetStringFromExpression(rightParam)}";
+                    var operand = OperandMap[expr.NodeType];
+                    var left = GetStringFromExpression(binaryExpr.Left);
+                    var right = GetStringFromExpression(binaryExpr.Right);
+                    return new QueryNode($"{left.QueryString} {operand} {right.QueryString}")
+                    {
+                        SubQueries = [..left.SubQueries, ..right.SubQueries]
+                    };
                 }
             case ExpressionType.AndAlso:
                 {
-                    var binaryExpr = (BinaryExpression)expr;
-                    return $"({GetStringFromExpression(binaryExpr.Left)}) and ({GetStringFromExpression(binaryExpr.Right)})";
+                    var binaryExpr = (BinaryExpression)expr;var left = GetStringFromExpression(binaryExpr.Left);
+                    var right = GetStringFromExpression(binaryExpr.Right);
+                    return new QueryNode($"({left.QueryString}) and ({right.QueryString})")
+                    {
+                        SubQueries = [..left.SubQueries, ..right.SubQueries]
+                    };
                 }
             case ExpressionType.OrElse:
                 {
                     var binaryExpr = (BinaryExpression)expr;
-                    return $"({GetStringFromExpression(binaryExpr.Left)}) or ({GetStringFromExpression(binaryExpr.Right)})";
+                    var left = GetStringFromExpression(binaryExpr.Left);
+                    var right = GetStringFromExpression(binaryExpr.Right);
+                    return new QueryNode($"({left.QueryString}) or ({right.QueryString})")
+                    {
+                        SubQueries = [..left.SubQueries, ..right.SubQueries]
+                    };
                 }
             case ExpressionType.MemberAccess:
                 var member = (MemberExpression)expr;
                 var name = UnwrapColumnName(member);
-                return name;
+                return new QueryNode(name);
             case ExpressionType.Constant:
                 var constant = (ConstantExpression)expr;
                 var value = constant.Value;
-                return $"'{value}'";
+                return new QueryNode($"'{value}'");
             default:
                 throw new InvalidOperationException($"Unsupported node type '{expr.NodeType}' in expression tree");
+        }
+    }
+
+    private static void ThrowIfNotSameProperty(Expression expr, Helper.ExpressionSide? expressionSide)
+    {
+        if (expressionSide != Helper.ExpressionSide.Both) return;
+        var binaryExpr = (BinaryExpression)expr;
+        var left = (MemberExpression)binaryExpr.Left;
+        var right = (MemberExpression)binaryExpr.Right;
+        
+        var leftProperty = (MemberExpression)left.Expression!;
+        var rightProperty = (MemberExpression)right.Expression!;
+        var fromSameProperty = leftProperty.Member.Name == rightProperty.Member.Name;
+        if (!fromSameProperty)
+        {
+            throw new InvalidOperationException("Cannot compare across child properties");
         }
     }
 
@@ -56,6 +111,11 @@ internal static class LambdaToOdataFilterTranslator
     {
         return expr switch
         {
+            BinaryExpression
+                {
+                    Left: MemberExpression { Expression: not null and not ParameterExpression }, 
+                    Right: MemberExpression { Expression: not null and not ParameterExpression }
+                } => (true, Helper.ExpressionSide.Both),
             BinaryExpression { Left: MemberExpression { Expression: not null and not ParameterExpression } } => (true,
                 Helper.ExpressionSide.Left),
             BinaryExpression { Right: MemberExpression { Expression: not null and not ParameterExpression } } => (true,
@@ -104,7 +164,7 @@ internal static class LambdaToOdataFilterTranslator
         return stack;
     }
 
-    private static Dictionary<ExpressionType, string> _operandMap = new() {
+    private static readonly Dictionary<ExpressionType, string> OperandMap = new() {
         { ExpressionType.Equal, "eq" },
         { ExpressionType.LessThan, "lt" },
         { ExpressionType.LessThanOrEqual, "le" },

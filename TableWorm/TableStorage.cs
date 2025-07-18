@@ -510,7 +510,7 @@ public partial class TableStorage
     {
         BinaryExpression op = (BinaryExpression)expression.Body;
         var query = LambdaToOdataFilterTranslator.GetStringFromExpression(op);
-        var result = Query<TTableModel>(query, maxDepth);
+        var result = Query<TTableModel>(query.QueryString, maxDepth);
         return result;
     }
 
@@ -518,7 +518,7 @@ public partial class TableStorage
     {
         BinaryExpression op = (BinaryExpression)expression.Body;
         var query = LambdaToOdataFilterTranslator.GetStringFromExpression(op);
-        var result = await QueryAsync<TTableModel>(query, maxDepth, cancellationToken);
+        var result = await QueryAsync<TTableModel>(query.QueryString, maxDepth, cancellationToken);
         return result;
     }
 

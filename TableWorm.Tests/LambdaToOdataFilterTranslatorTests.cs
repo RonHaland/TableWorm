@@ -9,7 +9,7 @@ public class LambdaToOdataFilterTranslatorTests
     {
         Expression<Func<TestModel, bool>> expr = m => m.Id == "testId";
         var result = LambdaToOdataFilterTranslator.GetStringFromExpression((BinaryExpression)expr.Body);
-        Assert.Equal("RowKey eq 'testId'", result);
+        Assert.Equal("RowKey eq 'testId'", result.QueryString);
     }
 
     [Fact]
@@ -17,7 +17,7 @@ public class LambdaToOdataFilterTranslatorTests
     {
         Expression<Func<TestModel, bool>> expr = m => m.Number > 10;
         var result = LambdaToOdataFilterTranslator.GetStringFromExpression((BinaryExpression)expr.Body);
-        Assert.Equal("Number gt '10'", result);
+        Assert.Equal("Number gt '10'", result.QueryString);
     }
     
     [Fact]
@@ -25,7 +25,7 @@ public class LambdaToOdataFilterTranslatorTests
     {
         Expression<Func<TestModel, bool>> expr = m => m.Number < 10;
         var result = LambdaToOdataFilterTranslator.GetStringFromExpression((BinaryExpression)expr.Body);
-        Assert.Equal("Number lt '10'", result);
+        Assert.Equal("Number lt '10'", result.QueryString);
     }
 
     [Fact]
@@ -33,7 +33,7 @@ public class LambdaToOdataFilterTranslatorTests
     {
         Expression<Func<TestModel, bool>> expr = m => m.Name != "John";
         var result = LambdaToOdataFilterTranslator.GetStringFromExpression((BinaryExpression)expr.Body);
-        Assert.Equal("Name ne 'John'", result);
+        Assert.Equal("Name ne 'John'", result.QueryString);
     }
 
     [Fact]
@@ -41,7 +41,7 @@ public class LambdaToOdataFilterTranslatorTests
     {
         Expression<Func<TestModel, bool>> expr = m => m.Number >= 10;
         var result = LambdaToOdataFilterTranslator.GetStringFromExpression((BinaryExpression)expr.Body);
-        Assert.Equal("Number ge '10'", result);
+        Assert.Equal("Number ge '10'", result.QueryString);
     }
     
     [Fact]
@@ -49,7 +49,7 @@ public class LambdaToOdataFilterTranslatorTests
     {
         Expression<Func<TestModel, bool>> expr = m => m.Number <= 10;
         var result = LambdaToOdataFilterTranslator.GetStringFromExpression((BinaryExpression)expr.Body);
-        Assert.Equal("Number le '10'", result);
+        Assert.Equal("Number le '10'", result.QueryString);
     }
 }
 
