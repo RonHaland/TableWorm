@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using TableWorm.Attributes;
 
 namespace TableWorm.Tests;
 
@@ -51,10 +52,32 @@ public class LambdaToOdataFilterTranslatorTests
         var result = LambdaToOdataFilterTranslator.GetStringFromExpression((BinaryExpression)expr.Body);
         Assert.Equal("Number le '10'", result.QueryString);
     }
+    
+    [Fact]
+    public void Test()
+    {
+        Expression<Func<Parent, bool>> expr = m => m.Child.Id == "none" && m.Id == "abc" && m.Child.PartitionKey == m.Child.Id && m.Child2.ModifiedDate < DateTimeOffset.Now;
+        var result = LambdaToOdataFilterTranslator.GetStringFromExpression((BinaryExpression)expr.Body);
+        Assert.Equal(2, result.SubQueries.Count);
+        Assert.NotNull(result.QueryString);
+        Assert.Equal(3, result.QueryString.Split("and").Length);
+    }
 }
 
 public class TestModel : TableModel
 {
     public string Name { get; set; }
     public int Number { get; set; }
+}
+
+public class Parent : TableModel
+{
+    public Child Child { get; set; }
+    public Child Child2 { get; set; }
+}
+
+public class Child : TableModel
+{
+    [TableParent]
+    public Parent Parent { get; set; }
 }
