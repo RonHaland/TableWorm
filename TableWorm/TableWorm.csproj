@@ -6,7 +6,7 @@
 
 		<PackageId>Ronhaland.TableWorm</PackageId>
 		<Description>Automatic relations for azure storage account tables</Description>
-		<Version>0.3.0-alpha1</Version>
+		<Version>0.3.0-alpha2</Version>
 		<Authors>RonHaland</Authors>
 		<PackageReadmeFile>readme.md</PackageReadmeFile>
 		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>

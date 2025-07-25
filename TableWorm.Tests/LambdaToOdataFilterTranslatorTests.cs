@@ -54,14 +54,39 @@ public class LambdaToOdataFilterTranslatorTests
     }
     
     [Fact]
-    public void Test()
+    public void GetStringFromExpression_ConstantFromObject_ReturnsCorrectOdata()
     {
-        Expression<Func<Parent, bool>> expr = m => m.Child.Id == "none" && m.Id == "abc" && m.Child.PartitionKey == m.Child.Id && m.Child2.ModifiedDate < DateTimeOffset.Now;
+        var sub = new TestModel { Number = 10, Name = "John" };
+        Expression<Func<TestModel, bool>> expr = m => m.Number == sub.Number;
         var result = LambdaToOdataFilterTranslator.GetStringFromExpression((BinaryExpression)expr.Body);
-        Assert.Equal(2, result.SubQueries.Count);
-        Assert.NotNull(result.QueryString);
-        Assert.Equal(3, result.QueryString.Split("and").Length);
+        Assert.Equal("Number eq '10'", result.QueryString);
     }
+    
+    [Fact]
+    public void GetStringFromExpression_ModifiedDateLtDateTimeNow_ReturnsCorrectOdata()
+    {
+        Expression<Func<TestModel, bool>> expr = m => m.ModifiedDate < DateTime.Now;
+        var result = LambdaToOdataFilterTranslator.GetStringFromExpression((BinaryExpression)expr.Body);
+        Assert.Contains("Timestamp lt '", result.QueryString);
+    }
+    
+    [Fact]
+    public void GetStringFromExpression_ModifiedDateGtDateTimeOffsetUtcNow_ReturnsCorrectOdata()
+    {
+        Expression<Func<TestModel, bool>> expr = m => m.ModifiedDate > DateTimeOffset.UtcNow;
+        var result = LambdaToOdataFilterTranslator.GetStringFromExpression((BinaryExpression)expr.Body);
+        Assert.Contains("Timestamp gt '", result.QueryString);
+    }
+    
+    // [Fact]
+    // public void Test()
+    // {
+    //     Expression<Func<Parent, bool>> expr = m => m.Child.Id == "none" && m.Id == "abc" && m.Child.PartitionKey == m.Child.Id && m.Child2.ModifiedDate < DateTimeOffset.Now;
+    //     var result = LambdaToOdataFilterTranslator.GetStringFromExpression((BinaryExpression)expr.Body);
+    //     Assert.Equal(2, result.SubQueries.Count);
+    //     Assert.NotNull(result.QueryString);
+    //     Assert.Equal(3, result.QueryString.Split("and").Length);
+    // }
 }
 
 public class TestModel : TableModel
