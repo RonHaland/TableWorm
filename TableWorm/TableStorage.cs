@@ -54,17 +54,18 @@ public partial class TableStorage
         var result = childMaps;
     }
 
-    public async Task Delete<TTableModel>(TTableModel model, int cascadeDepth = 0) where TTableModel : TableModel
+    public async Task DeleteAsync<TTableModel>(TTableModel model, int cascadeDepth = 0) where TTableModel : TableModel
     {
-        await Delete([model], cascadeDepth);
+        await DeleteAsync([model], cascadeDepth);
     }
-    public async Task Delete<TTableModel>(IEnumerable<TTableModel> models, int cascadeDepth = 0) where TTableModel : TableModel
+    public async Task DeleteAsync<TTableModel>(IEnumerable<TTableModel> models, int cascadeDepth = 0) where TTableModel : TableModel
     {
-        var entities = models.Distinct().Select(m => m.ConvertToTableEntity()).ToList();
+        var tableModels = models as TTableModel[] ?? models.ToArray();
+        var entities = tableModels.Distinct().Select(m => m.ConvertToTableEntity()).ToList();
         var flattenedDict = new Dictionary<string, List<TableEntity>>();
         if (cascadeDepth > 0) 
         {
-            var childMaps = models.Select(m => m.GetChildren(cascadeDepth - 1)).ToList();
+            var childMaps = tableModels.Select(m => m.GetChildren(cascadeDepth - 1)).ToList();
             var distinctKeys = childMaps.SelectMany(c => c.Keys).Distinct();
 
             foreach (var key in distinctKeys)
@@ -145,14 +146,28 @@ public partial class TableStorage
                 if (propValue == null) { continue; }
                 prop.SetValue(model, propValue);
             }
-            var foreignKeyProps = model.DirectTablePropertiesMap.TryGetValue(false, out var childProps) 
-                                            ? childProps.Where(p => p.GetCustomAttribute<TableForeignKeyAttribute>() != null) 
-                                            : [];
-            foreach (var prop in foreignKeyProps)
+
+            if (model.DirectTablePropertiesMap.TryGetValue(false, out var childProps))
             {
-                var key = prop.GetCustomAttribute<TableForeignKeyAttribute>()?.Name ?? prop.Name + "Id";
-                var propValue = e[key];
-                model._foreignKeys.Add(key, (string)propValue!);
+                var foreignKeyProps = childProps.Where(p => p.GetCustomAttribute<TableForeignKeyAttribute>() != null);
+                foreach (var prop in foreignKeyProps)
+                {
+                    var key = prop.GetCustomAttribute<TableForeignKeyAttribute>()?.Name ?? prop.Name + "Id";
+                    var propValue = e[key];
+                    model._foreignKeys.Add(key, (string)propValue!);
+                }
+
+                var jsonProps = childProps.Where(p => p.GetCustomAttribute<TableJsonAttribute>() != null);
+                foreach (var prop in jsonProps)
+                {
+                    var propValue = (string)e[prop.Name];
+                    var method = typeof(JsonSerializer).GetMethod("Deserialize",
+                        BindingFlags.Public | BindingFlags.Static, [typeof(string), typeof(JsonSerializerOptions)]);
+                    var genericMethod = method!.MakeGenericMethod([prop.PropertyType]);
+                    var deserializedObject = genericMethod.Invoke(null, [propValue, null]);
+
+                    prop.SetValue(model, deserializedObject);
+                }
             }
 
             return model;
@@ -522,21 +537,30 @@ public partial class TableStorage
         return result;
     }
 
-    public TTableModel? Get<TTableModel>(string Id, string? PartitionKey = null, int maxDepth = 5) where TTableModel : TableModel
+    public TTableModel? Get<TTableModel>(string id, string? partitionKey = null, int maxDepth = 5) where TTableModel : TableModel
     {
-        if (PartitionKey == null)
+        if (partitionKey == null)
         {
-            return Query<TTableModel>(m => m.Id ==  Id, maxDepth)?.Single();
+            return Query<TTableModel>(m => m.Id ==  id, maxDepth)?.Single();
         }
-        return Query<TTableModel>(m => m.Id == Id && m.PartitionKey == PartitionKey, maxDepth)?.Single();
+        return Query<TTableModel>(m => m.Id == id && m.PartitionKey == partitionKey, maxDepth)?.Single();
+    }
+    
+    public async Task<TTableModel?> GetAsync<TTableModel>(string id, string? partitionKey = null, int maxDepth = 5) where TTableModel : TableModel
+    {
+        if (partitionKey == null)
+        {
+            return (await QueryAsync<TTableModel>(m => m.Id == id, maxDepth))?.SingleOrDefault();
+        }
+        return (await QueryAsync<TTableModel>(m => m.Id == id && m.PartitionKey == partitionKey, maxDepth))?.SingleOrDefault();
     }
 
-    public async Task Delete<TTableModel>(Expression<Func<TTableModel, bool>> expression, int maxDepth = 0) where TTableModel:TableModel
+    public async Task DeleteAsync<TTableModel>(Expression<Func<TTableModel, bool>> expression, int maxDepth = 0) where TTableModel:TableModel
     {
         var models = Query(expression, 0)?.ToList();
         if (models == null || models.Count == 0)
             return;
-        await Delete(models, maxDepth);
+        await DeleteAsync(models, maxDepth);
     }
 
 }

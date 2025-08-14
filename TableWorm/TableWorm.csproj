@@ -6,7 +6,7 @@
 
 		<PackageId>Ronhaland.TableWorm</PackageId>
 		<Description>Automatic relations for azure storage account tables</Description>
-		<Version>0.3.0-alpha2</Version>
+		<Version>0.3.1-alpha1</Version>
 		<Authors>RonHaland</Authors>
 		<PackageReadmeFile>readme.md</PackageReadmeFile>
 		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
@@ -18,6 +18,11 @@
 		<Title>TableWorm</Title>
 		<PackageProjectUrl>https://github.com/RonHaland/TableWorm</PackageProjectUrl>
 		<PackageTags>Storage account; ORM; Tables</PackageTags>
+		<PackageReleaseNotes>bug fixes:
+- tableJson works non async
+- DateTime(offset).Now/UtcNow should work in lambdas in more cases
+
+added async Get()</PackageReleaseNotes>
 	</PropertyGroup>
 
 	<ItemGroup>

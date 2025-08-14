@@ -73,14 +73,14 @@ internal static class LambdaToOdataFilterTranslator
 
                 if (temp.Expression is ParameterExpression) return UnwrapColumnName(memberExpr);
                 var value = GetValueFromExpression(memberExpr);
-                return $"'{value}'";
+                return value is (DateTime or DateTimeOffset) ? $"'{value:O}'" : $"'{value}'";
 
             case ExpressionType.Constant:
                 var constant = (ConstantExpression)expr;
                 return $"'{constant.Value}'";
             case ExpressionType.Convert:
                 var convertValue = GetValueFromExpression(expr);
-                return convertValue is DateTime or DateTimeOffset ? $"'{convertValue:O}'" : $"'{convertValue}'";
+                return convertValue is (DateTime or DateTimeOffset) ? $"'{convertValue:O}'" : $"'{convertValue}'";
             default:
                 throw new InvalidOperationException($"Unsupported node type '{expr.NodeType}' in expression tree");
         }

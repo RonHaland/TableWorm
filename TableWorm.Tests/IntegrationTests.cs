@@ -54,16 +54,16 @@ public class IntegrationTests
         var ctx = Configure();
 
         var allRoot = ctx.Query<Root>("RowKey ge ''");
-        await ctx.Delete(allRoot ?? [], 5);
+        await ctx.DeleteAsync(allRoot ?? [], 5);
 
         var allBase = ctx.Query<Base>("RowKey ge ''");
-        await ctx.Delete(allBase ?? [], 5);
+        await ctx.DeleteAsync(allBase ?? [], 5);
 
         var allBranch = ctx.Query<Branch>("RowKey ge ''");
-        await ctx.Delete(allBranch ?? [], 5);
+        await ctx.DeleteAsync(allBranch ?? [], 5);
 
         var allLeaf = ctx.Query<Leaf>("RowKey ge ''");
-        await ctx.Delete(allLeaf ?? [], 5);
+        await ctx.DeleteAsync(allLeaf ?? [], 5);
     }
 
     [Fact]
@@ -308,7 +308,7 @@ public class IntegrationTests
 
         var allTrees = (await ctx.QueryAsync<Root>("", 0))!.ToList();
 
-        await ctx.Delete(root1, 5);
+        await ctx.DeleteAsync(root1, 5);
 
         var allTreesAfter = (await ctx.QueryAsync<Root>("", 0))!.ToList();
 
@@ -346,7 +346,7 @@ public class IntegrationTests
         Assert.Contains(result, r => r.Id == "a");
         Assert.Contains(result, r => r.Id == "b");
 
-        await ctx.Delete(result, 1);
+        await ctx.DeleteAsync(result, 1);
     }
 
     [Fact]
@@ -379,7 +379,7 @@ public class IntegrationTests
         Assert.Contains(resultArray, r => r.Id == "a");
         Assert.Contains(resultArray, r => r.Id == "b");
 
-        await ctx.Delete(resultArray, 1);
+        await ctx.DeleteAsync(resultArray, 1);
     }
 
     [Fact]
@@ -394,6 +394,7 @@ public class IntegrationTests
             Hello = -1,
             Id = "a",
             PartitionKey = "tree1",
+            Codes = ["one", "two", "three"],
         };
         var tree2 = new Root
         {
@@ -401,6 +402,7 @@ public class IntegrationTests
             Hello = -1,
             Id = "b",
             PartitionKey = "tree2",
+            Codes = ["four", "five", "six"],
         };
         await ctx.Save(tree1, tree2);
 
@@ -410,8 +412,9 @@ public class IntegrationTests
         var resultArray = result as Root[] ?? result.ToArray();
         Assert.NotEmpty(resultArray);
         Assert.Contains(resultArray, r => r.Id == "a");
+        Assert.Equal(3, resultArray.SelectMany(s => s.Codes).Count());
 
-        await ctx.Delete(resultArray, 1);
+        await ctx.DeleteAsync(resultArray, 1);
     }
 
     [Fact]
@@ -526,7 +529,7 @@ public class IntegrationTests
         await ctx.Save(testCase);
         var result = await ctx.QueryAsync<TestParent>(v => v.PartitionKey == "test");
 
-        await ctx.Delete(result ?? [], 1);
+        await ctx.DeleteAsync(result ?? [], 1);
     }
 
 }
